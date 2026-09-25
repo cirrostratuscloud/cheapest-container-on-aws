@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cheapo — cheapest public container on AWS</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; }
+  h1 { margin-bottom: 0.2rem; }
+  .sub { color: #888; margin-top: 0; }
+  table { border-collapse: collapse; width: 100%; margin: 1.5rem 0; }
+  th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid #8884; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .total td { font-weight: 700; border-top: 2px solid #8886; border-bottom: none; }
+  .path { font-family: ui-monospace, monospace; font-size: 0.85rem; background: #8881; padding: 0.75rem; border-radius: 6px; white-space: pre; overflow-x: auto; }
+  .note { font-size: 0.85rem; color: #888; }
+</style>
+</head>
+<body>
+  <h1>cheapo</h1>
+  <p class="sub">Cheapest possible always-on public container on AWS. Proof of concept.</p>
+
+  <p>This page is served by an nginx container on Fargate, reached through:</p>
+  <div class="path">Internet
+  -> API Gateway HTTP API      (pay per request)
+  -> VPC Link                   (no NLB, no hourly fee)
+  -> Cloud Map service          (ECS service discovery)
+  -> Fargate task, ARM64 + Spot (private dual-stack subnet, IPv6 egress)</div>
+  <p><strong>No NAT gateway. No load balancer. No PrivateLink endpoints.</strong></p>
+
+  <h2>Monthly cost @ 1,000 page views</h2>
+  <p class="note">us-east-1. Task = 0.25 vCPU / 0.5 GB, running 24/7 (~730 hrs).
+  Cost is driven by container <em>uptime</em>, not traffic — 1,000 views is rounding error.</p>
+
+  <table>
+    <thead>
+      <tr><th>Component</th><th>Basis</th><th class="num">USD / mo</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Fargate vCPU (ARM Spot)</td><td>0.25 × 730h × $0.04048 × 0.8 × 0.3</td><td class="num">2.22</td></tr>
+      <tr><td>Fargate memory (ARM Spot)</td><td>0.5 × 730h × $0.004445 × 0.8 × 0.3</td><td class="num">0.49</td></tr>
+      <tr><td>API Gateway HTTP API</td><td>1,000 req × $1.00 / million</td><td class="num">0.00</td></tr>
+      <tr><td>VPC Link</td><td>no hourly charge (HTTP API)</td><td class="num">0.00</td></tr>
+      <tr><td>Egress-only IGW</td><td>no charge</td><td class="num">0.00</td></tr>
+      <tr><td>Data transfer out</td><td>~negligible at 1k views</td><td class="num">0.00</td></tr>
+      <tr class="total"><td colspan="2">Total (ARM Spot)</td><td class="num">~2.71</td></tr>
+    </tbody>
+  </table>
+
+  <p class="note">
+    For comparison: ARM on-demand Fargate ≈ <strong>$7.2/mo</strong>; x86 on-demand ≈ <strong>$9/mo</strong>.
+    A NAT gateway alone would add ~$32/mo, and a load balancer ~$16/mo — both avoided here.
+  </p>
+  <p class="note">
+    ARM Spot multipliers: ×0.8 = ~20% Graviton discount, ×0.3 = up to ~70% Spot discount.
+    Spot tasks can be reclaimed with a 2-minute warning; fine for a single-instance demo blog.
+  </p>
+</body>
+</html>
