@@ -58,7 +58,9 @@ There is no `logConfiguration` on the task. On a dual-stack task the `awslogs`
 driver connects to CloudWatch over IPv4, and this subnet has no IPv4 egress, so
 the driver times out and the task never leaves PENDING
 (`ResourceInitializationError: failed to validate logger args`). Dropping the log
-config lets the task start.
+config lets the task start. 
+
+AWS Please fix.
 
 If you want logs without a NAT gateway, add a **CloudWatch Logs dual-stack
 interface VPC endpoint** (~$7/mo) and put the `awslogs` config back. That keeps log
