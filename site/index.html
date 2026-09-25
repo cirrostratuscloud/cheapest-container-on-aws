@@ -40,16 +40,17 @@
     <tbody>
       <tr><td>Fargate vCPU (ARM Spot)</td><td>0.25 × 730h × $0.04048 × 0.8 × 0.3</td><td class="num">2.22</td></tr>
       <tr><td>Fargate memory (ARM Spot)</td><td>0.5 × 730h × $0.004445 × 0.8 × 0.3</td><td class="num">0.49</td></tr>
+      <tr><td>Cloud Map (Route 53 hosted zone)</td><td>1 private hosted zone × $0.50</td><td class="num">0.50</td></tr>
       <tr><td>API Gateway HTTP API</td><td>1,000 req × $1.00 / million</td><td class="num">0.00</td></tr>
       <tr><td>VPC Link</td><td>no hourly charge (HTTP API)</td><td class="num">0.00</td></tr>
       <tr><td>Egress-only IGW</td><td>no charge</td><td class="num">0.00</td></tr>
       <tr><td>Data transfer out</td><td>~negligible at 1k views</td><td class="num">0.00</td></tr>
-      <tr class="total"><td colspan="2">Total (ARM Spot)</td><td class="num">~2.71</td></tr>
+      <tr class="total"><td colspan="2">Total (ARM Spot)</td><td class="num">~3.21</td></tr>
     </tbody>
   </table>
 
   <p class="note">
-    For comparison: ARM on-demand Fargate ≈ <strong>$7.2/mo</strong>; x86 on-demand ≈ <strong>$9/mo</strong>.
+    For comparison: ARM on-demand Fargate ≈ <strong>$7.7/mo</strong>; x86 on-demand ≈ <strong>$9.5/mo</strong>.
     A NAT gateway alone would add ~$32/mo, and a load balancer ~$16/mo — both avoided here.
   </p>
   <p class="note">

@@ -10,7 +10,7 @@ API Gateway HTTP API  (per-request)
        └─ Cloud Map service  (ECS service discovery, SRV records)
             └─ Fargate task, ARM64 + Spot, in a private DUAL-STACK subnet
                  ├─ egress over IPv6 only (egress-only IGW) — image pull, etc.
-                 └─ private IPv4, used ONLY for the in-VPC VPC Link hop
+                 └─ private IPv4 (no internet route), used ONLY for the in-VPC VPC Link hop
 ```
 
 **No NAT gateway. No load balancer. No PrivateLink interface endpoints.** The only
@@ -33,12 +33,15 @@ working around two hard AWS limits, both discovered the hard way:
    returns "No target endpoints found" and every request 500s. The task therefore
    needs a private **IPv4** address for the VPC Link hop.
 2. **A NAT gateway is the expensive part, not the IPv4 address itself.** So the
-   task subnet is dual-stack, but its route table has **no IPv4 default route** —
-   only an IPv6 default route to an egress-only internet gateway. The private IPv4
-   is used purely for in-VPC traffic (the VPC Link reaching the task); all internet
-   egress (pulling the image) goes over IPv6. No NAT, no cost.
+   task subnet is dual-stack, but its route table has **no IPv4 route to the
+   internet** — no `0.0.0.0/0` via a NAT or internet gateway. (The automatic
+   local route for the VPC's IPv4 CIDR is always there and can't be removed;
+   that's fine, it's in-VPC only.) The only default route is IPv6, to an
+   egress-only internet gateway. The private IPv4 is used purely for in-VPC
+   traffic (the VPC Link reaching the task); all internet egress (pulling the
+   image) goes over IPv6. No NAT, no cost.
 
-So: dual-stack subnet, IPv4 stays link-local to the VPC, IPv6 does the egress.
+So: dual-stack subnet, IPv4 reaches only within the VPC, IPv6 does the egress.
 
 Other requirements:
 

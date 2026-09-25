@@ -4,8 +4,10 @@ data "aws_availability_zones" "available" {
 
 # ---------------------------------------------------------------------------
 # VPC with an Amazon-provided IPv6 /56 block.
-# The VPC still carries an IPv4 CIDR (VPCs require one), but the task subnets
-# below are IPv6-only, so tasks get no IPv4 address and egress over IPv6.
+# The VPC carries an IPv4 CIDR (VPCs require one). The task subnets below are
+# dual-stack: they have a private IPv4 (needed so API Gateway's Cloud Map
+# integration can resolve the task) but no IPv4 route to the internet, so all
+# egress goes over IPv6.
 # ---------------------------------------------------------------------------
 resource "aws_vpc" "main" {
   cidr_block                       = "10.0.0.0/16"
@@ -25,9 +27,12 @@ resource "aws_egress_only_internet_gateway" "eigw" {
 }
 
 # ---------------------------------------------------------------------------
-# Private IPv6-only subnets for the Fargate tasks (one per AZ, two for spread).
-# ipv6_native = true means no IPv4 CIDR is assigned to the subnet, so the task
-# ENIs egress over IPv6 only (image pulls + logs) with no NAT.
+# Private dual-stack subnets for the Fargate tasks (one per AZ, two for spread).
+# Each carries a private IPv4 CIDR AND an IPv6 CIDR. The IPv4 exists only so the
+# task registers AWS_INSTANCE_IPV4 in Cloud Map (API Gateway's Cloud Map
+# integration only resolves IPv4 targets). There's no IPv4 route to the internet
+# on the route table below, so all egress (image pulls) still goes over IPv6 and
+# no NAT gateway is needed.
 # ---------------------------------------------------------------------------
 resource "aws_subnet" "ipv6" {
   count = 2
@@ -54,7 +59,9 @@ resource "aws_route_table" "ipv6" {
   tags   = { Name = "${var.name}-rt-ipv6" }
 }
 
-# Default IPv6 route to the egress-only IGW (outbound only).
+# Default IPv6 route to the egress-only IGW (outbound only). Note there is
+# deliberately NO IPv4 route to the internet here; the subnet keeps only the
+# automatic local route for the VPC IPv4 CIDR, so no NAT gateway is needed.
 resource "aws_route" "ipv6_default" {
   route_table_id              = aws_route_table.ipv6.id
   destination_ipv6_cidr_block = "::/0"
