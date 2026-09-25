@@ -11,5 +11,3 @@ override.tf.json
 *_override.tf.json
 .terraformrc
 terraform.rc
-
-# Note: .terraform.lock.hcl IS committed on purpose (pins provider versions).
